@@ -1,4 +1,4 @@
-let compiler = require('../compiler2').translate;
+let compiler = require('./compiler2').translate;
 let unpack = require("import-for-web");
 let path = require("path")
 
