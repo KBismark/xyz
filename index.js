@@ -20,10 +20,11 @@ http.createServer(async function (req, res) {
     if (parsedUrl.pathname == "/") {
         let page = indexPage({ isSSR: true }, "/modules/myapp@0.1.0", {});
         //Serve main app
-        res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.write(page[0])
+        res.writeHead(200, { 'Content-Type': 'text/html','Transfer-Encoding':'chunked' });
+        res.write(page[0]); console.log(new Date());
         await RenderPage(res, require(importsMap['/modules/myapp@0.1.0'] + '.server.js'), importsMap);
-        res.write(page[1]);
+        console.log(new Date());
+        res.write(page[1]); 
         res.end();
     } else if (parsedUrl.pathname.startsWith('/statics')) {
         res.writeHead(200, { 'Content-Type': 'text/javascript' })

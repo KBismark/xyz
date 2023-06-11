@@ -231,7 +231,8 @@ const UI = Breaker.UI;
   
   UI.CreateApp(
     "/",
-    UI.render(UI.CreateComponent('main',Main).instance()),
+   // UI.render(UI.CreateComponent('main',Main).instance()),
+   UI.CreateComponent('main',Main).instance(),
     typeof document!='undefined'? document.getElementById("page"):null
   );
   

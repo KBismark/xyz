@@ -270,6 +270,103 @@
             }
         }
     }
+
+    
+   
+
+
+    window.addEventListener(
+        "popstate",
+        function PagePopState(e) {
+          var pathname = window.location.pathname;
+          if (PAGES[pathname]) {
+            if (page_tracking.currentPageName != pathname) {
+              B.UI.renderPage(pathname,undefined,internal);
+            }
+          } else {
+              history.replaceState(
+                  e.state,
+                  "",
+                  window.location.origin + page_tracking.currentPageName
+              );
+          }
+        },
+        false
+    );
+    
+    let PAGES = {};
+    let page_tracking = {
+        isFirstRender:false,
+        ispopstate: undefined,
+        newPage: undefined,
+        renderNewPage: undefined,
+        newPageName:'',
+        clientRendered: false,
+        currentPage: null,
+        currentPageName: window.location.origin,
+        onpageExit: {},
+        onNewPage: {},
+        visitedPages: {}
+    };
+    let pagelock = internal;
+    let pageopen = {};
+    function _newpageRendered() {
+        let newPage = page_tracking.renderNewPage;
+        if (!newPage) return false;
+        let currentPage = page_tracking.currentPage;
+        let currentPageName = page_tracking.currentPageName;
+        let newPageName = page_tracking.newPageName;
+        if (newPage == currentPage) {
+            if (newPageName != currentPageName) {
+                page_tracking.currentPageName = newPageName;
+                if (page_tracking.ispopstate==internal) {
+                    history.pushState(
+                        null,
+                        "",
+                        window.location.origin + newPageName
+                    );
+               }
+            };
+        } else {
+            if (page_tracking.isFirstRender) {
+                window.scrollTo({ top: 0 });
+            }
+            if (page_tracking.clientRendered) {
+                let newPageInstance = Blocks.get(newPage)[internal].ins;
+                let block = Blocks.get(currentPage);
+                let node = block[internal].outerValue[internal].node;
+                let replacer = document.createTextNode('');
+                node.replaceWith(replacer);
+                replacer.replaceWith(B.UI.render(newPageInstance)[internal].node);
+                componentsTrashBin.add(currentPage)
+                page_tracking.currentPageName = newPageName;
+                page_tracking.currentPage = newPage;
+
+
+            } else {
+                let newPageInstance = Blocks.get(newPage)[internal].ins;
+                let block = Blocks.get(currentPage);
+                let node = block[internal].outerValue[internal].node;
+                if (!node) {
+                    node = block[internal].outerValue[internal].node = document.getElementById('page');
+                }
+                let replacer = document.createTextNode('');
+                node.replaceWith(replacer);
+                replacer.replaceWith(B.UI.render(newPageInstance)[internal].node);
+                componentsTrashBin.add(newPage);
+                page_tracking.currentPageName = newPageName;
+                page_tracking.currentPage = newPage;
+            }
+            return true;
+        }
+        if (page_tracking.isFirstRender) {
+            window.scrollTo({ top: 0 });
+        }
+        page_tracking.newPageName = '';
+        page_tracking.isFirstRender = false;
+        page_tracking.ispopstate = page_tracking.ispopstate = page_tracking.renderNewPage = undefined;
+        return false
+    }
     function AfterInserts() {
         MountBucket.forEach(function (comp) {
             comp.onMount.apply(comp);
@@ -284,16 +381,6 @@
     var UI = /** @class */ (function () {
         function UI() {
         }
-        UI.prototype.CreateStyle = function () {
-            var styles = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                styles[_i] = arguments[_i];
-            }
-            if (styles.length) {
-                return styles.join(";");
-            }
-            return "";
-        };
         UI.prototype.CreateList = function (list) {
             return new List(list);
         };
@@ -311,11 +398,48 @@
             }
             return fn;
         };
-        UI.prototype.CreateApp = function (pagePath, app, destination) {
-            if (B.isSSR) { B.isSSR = false; return}
-            destination.replaceWith(app[internal].node);
-            AfterInserts();
+        UI.prototype.CreateApp = function (pagePath, ins, destination) {
+            if (pagelock == pageopen) {
+                let id = ins[internal_ins].id;
+                page_tracking.currentPage = id;
+                page_tracking.currentPageName =  pagePath;
+                PAGES[pagePath] = id;
+                if (B.isSSR) {
+                    B.isSSR = false;
+                    //ins[internal_ins].out[internal].node = 8
+                    return;
+                }
+                page_tracking.clientRendered = true;
+                let app = B.UI.render(ins);
+                destination.replaceWith(app[internal].node);
+                AfterInserts();
+                return
+            }
+            if (B.isSSR) { B.isSSR = false; return }
         };
+        UI.prototype.lockAppCreation = function (obj) {
+            if (pagelock == internal) {
+                pagelock = obj;
+            }
+        };
+        UI.prototype.unlockAppCreation = function (obj) {
+            if (pagelock == obj) {
+                pagelock = pageopen;
+            }
+        };
+        UI.prototype.renderPage = function (pagePath, ins, popstate) {
+            let id;
+            if (!PAGES[pagePath]) {
+                PAGES[pagePath] = ins[internal_ins].id;
+                page_tracking.isFirstRender = true;
+            } else {
+                page_tracking.isFirstRender = false;
+            }
+            page_tracking.renderNewPage = PAGES[pagePath];
+            page_tracking.newPageName = pagePath;
+            page_tracking.ispopstate = popstate;
+            startUpdates()
+        }
         UI.prototype.render = function (ins, args) {
             if (B.isSSR) { return}
             var id = ins[internal_ins].id;
@@ -396,21 +520,6 @@
                     return _internal_.outerValue;
             }
         };
-        UI.prototype.setState = function (This, state) {
-            var _internal_ = This[internal];
-            if (!This.state) {
-                This.state = state;
-                updateDynamicnodes(_internal_.id, _internal_.fnId, undefined);
-                return;
-            }
-            ;
-            This.state = __assign(__assign({}, This.state), state);
-            updateDynamicnodes(_internal_.id, _internal_.fnId, undefined);
-        };
-        UI.prototype.setClass = function (This, key, classObject) {
-            var _internal_ = This[internal];
-            B.ui.update(_internal_.ins, internal, key, classObject);
-        };
         UI.prototype.getPublicData = function (ins) {
             return Blocks.get(ins[internal_ins].id).public || {};
         };
@@ -421,40 +530,9 @@
             var parent = This[internal].outerValue[internal].parent;
             return Blocks.get(parent)[internal].ins;
         };
-        UI.prototype.update = function (ins) {
-            var _b;
-            var args = [];
-            for (var _i = 1; _i < arguments.length; _i++) {
-                args[_i - 1] = arguments[_i];
-            }
-            var id = ins[internal_ins].id;
-            var pre = standAloneUpdates.get(id);
-            if (args.length && args[0] == internal) {
-                if (!pre) {
-                    standAloneUpdates.set(id, { ins: ins, main: false, args: undefined, keys: (_b = {}, _b[args[1]] = { class: args[2] }, _b) });
-                    if (!updates_initiated) {
-                        updates_initiated = true;
-                        setTimeout(update, 0);
-                    }
-                }
-                else {
-                    pre.key[args[1]] = pre.key[args[1]] || { class: {} };
-                    pre.key[args[1]].class = __assign(__assign({}, pre.key[args[1]].class), args[2]);
-                }
-                return;
-            }
-            args = args.length ? args[0] : undefined;
-            if (pre) {
-                pre.main = true;
-                pre.args = args;
-                return;
-            }
-            standAloneUpdates.set(id, { ins: ins, main: true, args: args, keys: {} });
-            if (!updates_initiated) {
-                updates_initiated = true;
-                setTimeout(update, 0);
-            }
-        };
+        UI.prototype.setDataSource = function(info) {
+           B.externalData[info.url] = { data: info.data };
+        }
         return UI;
     }());
     function keepStateIfDestroyed(bool) { let _internal_=this[internal]; if (_internal_.pure) { return }; _internal_.keepState = !!bool; }
@@ -791,23 +869,29 @@
         docF.append.apply(docF, ar);
         return docF;
     }
+    let pendingUpdates = false;
     function startUpdates() {
         if (!updates_initiated) {
             updates_initiated = true;
             setTimeout(update, 1);
         }
     };
+    function _listupdater(value) {
+        var parentData = { id: value.pos.parent, i: value.pos.dynIndex };
+        updateList(value, parentData, undefined);
+    }
     function update() {
         updating = true;
-        dynamicNodeUpdates.forEach(function (value) {
-            updateStatefulDynamicnodes(value);
-        });
-        dynamicNodeUpdates.clear();
-        listUpdates.forEach(function (value) {
-            var parentData = { id: value.pos.parent, i: value.pos.dynIndex };
-            updateList(value, parentData, undefined);
-        });
-        listUpdates.clear();
+        let newpage = _newpageRendered();
+        if (!newpage) {
+            dynamicNodeUpdates.forEach(updateStatefulDynamicnodes);
+            dynamicNodeUpdates.clear();
+            listUpdates.forEach(_listupdater);
+            listUpdates.clear();
+        } else {
+            dynamicNodeUpdates.clear();
+            listUpdates.clear();
+        }
         AfterInserts()
         setTimeout(cleanUp, 1);
         //cleanUp();
@@ -1450,10 +1534,11 @@
             renderingComponent.dynIndex = undefined;
         }
     }
+    function _clean(id) {
+        clearComponents(undefined, id);
+    }
     function cleanUp() {
-        componentsTrashBin.forEach(function (id) {
-            clearComponents(undefined, id);
-        });
+        componentsTrashBin.forEach(_clean);
         componentsTrashBin.clear();
         //console.log(Blocks);
     }
@@ -1523,7 +1608,7 @@
         return out;
     }
     function getComponentInstance(initArgs) {
-        if (B.isSSR) { return}
+        //if (B.isSSR) { return}
         var _b;
         var _internal_ = new ComponentInstance({ methodId: this.fnId, args: undefined, initArgs: initArgs });
         Blocks.set(_internal_.id, (_b = {}, _b[internal] = _internal_, _b));

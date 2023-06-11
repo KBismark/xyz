@@ -31,7 +31,7 @@ const Jumbotron = UI.CreateComponent('jumbo',function () {
             Button.instance(),
             Button.instance(),
           ]),
-        };
+          };
       }
       this.public = function () {
         return {

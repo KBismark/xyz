@@ -225,7 +225,8 @@ return [{}]},{'0':function(args,state){return (UI.render(this.state.jumbotronIns
   
   UI.CreateApp(
     "/",
-    UI.render(UI.CreateComponent('main',Main).instance()),
+   // UI.render(UI.CreateComponent('main',Main).instance()),
+   UI.CreateComponent('main',Main).instance(),
     typeof document!='undefined'? document.getElementById("page"):null
   );
   
