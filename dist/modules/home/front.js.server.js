@@ -1,9 +1,12 @@
 
 module.exports = function(Breaker){const IMEX = Breaker.UI._imex;
-IMEX.pathname = '/modules/myapp@0.1.0/home/front.js';
-
-
+IMEX.pathname = '/modules/myapp@0.1.0';
+IMEX.include('/modules/myapp@0.1.0/home/jumbo.js')
+IMEX.include('/modules/myapp@0.1.0/home/row.js')
 IMEX.onload=function(){
+const { Jumbotron } = IMEX.require('/modules/myapp@0.1.0/home/jumbo.js');
+const { Row } = IMEX.require('/modules/myapp@0.1.0/home/row.js');
+
 const UI = Breaker.UI;
   
   const random = (max) => Math.round(Math.random() * 1000) % max;
@@ -80,113 +83,7 @@ const UI = Breaker.UI;
   
     return data;
   };
-  
-  const Row = UI.CreateComponent('row',function () {
-      this.onCreation = function () {
-          this.state = this.initArgs;
-          this.state.selected = false;
-      }
-      this.onServer = function (args,ready) {
-        this.state = this.initArgs;
-        this.state.selected = false;
-    }
-      this.public = function () {
-          return {
-              select: function (selected) {
-                  this.state.selected = selected;
-              }.bind(this),
-              updateLabel: function () {
-                  this.state.label += " !!!";
-              }.bind(this),
-          };
-      }
-    
-    return (
-      function(args,state,Component,Node){return [`<tr ${Component.isIndependent?`bee-I="${Node.id='a'}" bee-path=${JSON.stringify(Component.pathname)} bee-N=${JSON.stringify(Component.name)}`:''} key="row" class="${Component.isIndependent?`bee-${Component.parentId}`:''} ${{value:state.selected?"danger":"",$dep:["selected"]}.value}"><td class="ol-md-1">`,function(args,state){return (state.id)},`</td><td class="ol-md-4"><a onclick="Breaker.select(this,'click')">`,function(args,state){return (UI.CreateDynamicNode(function (state) { return state.label }, ["label"]))},`</a></td><td class="ol-md-1"><a onclick="Breaker.select(this,'click')"><span class="lyphicon glyphicon-remove" aria-hidden="true"></span></a></td><td class="ol-md-6"></td></tr>`]}
-    );
-  });
-  
-  const Button = UI.CreateComponent("Button",function () {
-   
-    this.onCreation = function (args) {
-      this.action = args.action;
-      }
-      this.onServer = function (args,ready) {
-        this.action = args.action;
-      }
-    return (
-      function(args,state,Component,Node){return [`<div ${Component.isIndependent?`bee-I="${Node.id='b'}" bee-path=${JSON.stringify(Component.pathname)} bee-N=${JSON.stringify(Component.name)}`:''} class="ol-sm-6 smallpad${Component.isIndependent?` bee-${Component.parentId}`:''}"><button key="button" type="button" class="tn btn-primary btn-block" id="${args.id}" onclick="Breaker.select(this,'click')">`,function(args,state){return (args.title)},`</button></div>`]}
-    );
-  });
-  
-  const Jumbotron = UI.CreateComponent('jumbo',function () {
-    this.onCreation = function () {
-        this.state = {
-          buttons: UI.CreateList([
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-          ]),
-        };
-      }
-      this.onServer = function (args,ready) {
-        this.state = {
-          buttons: UI.CreateList([
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-          ]),
-        };
-      }
-      this.public = function () {
-        return {
-          action: function (action) {
-            UI.getPublicData(UI.getParentInstance(this))[action.act](action.args);
-          }.bind(this),
-        };
-      };
-  
-   
-  
-    this.tempData = [
-      {
-        id: "run",
-        title: "Create 1,000 rows",
-        action: { act: "create", args: 1000 },
-      },
-      {
-        id: "runlots",
-        title: "Create 10,000 rows",
-        action: { act: "create", args: 10000 },
-      },
-      {
-        id: "add",
-        title: "Append 1,000 rows",
-        action: { act: "append", args: 1000 },
-      },
-      { id: "update", title: "Update every 10th row", action: { act: "update" } },
-      { id: "clear", title: "Clear", action: { act: "clear" } },
-      { id: "swaprows", title: "Swap Rows", action: { act: "swap" } },
-    ];
-    return (
-      function(args,state,Component,Node){return [`<div ${Component.isIndependent?`bee-I="${Node.id='c'}" bee-path=${JSON.stringify(Component.pathname)} bee-N=${JSON.stringify(Component.name)}`:''} class="umbotron${Component.isIndependent?` bee-${Component.parentId}`:''}"><div><div class="ol-md-6"><h1>Breaker (keyed)</h1></div><div class="ol-md-6"><div>`,function(args,state){return (
-                    this.state.buttons.map(
-                        this.tempData,
-                        function (e, i, data) {
-                          return UI.render(e, data[i]);
-                        },
-                        this
-                      )
-                  )},`</div></div></div></div>`]}
-    );
-  });
-  
+ 
   const Main = function () {
     this.onCreation = function () {
         this.state = {
@@ -203,7 +100,6 @@ const UI = Breaker.UI;
           renderedData: []
         };
         this.rowsList = UI.CreateList([]);
-        
       }
     
       this.public = function () {
@@ -223,7 +119,7 @@ const UI = Breaker.UI;
             if (l) {
               list.remove(0)
             }
-            list.insertBefore(0, rows, { data: null, handler: (row) => { render(row) } });
+            list.insertBefore(0, rows, { data: null, handler: (row) => { UI.render(row) } });
             // list.insertBefore(0, rows)
             // setState(this, {
             //   renderList: true,
@@ -242,7 +138,7 @@ const UI = Breaker.UI;
             }
            
             //this.state.renderedData = this.state.renderedData.concat(data);
-            list.insertBefore(-1, rows, { data: null, handler: (row) => { render(row) } });
+            list.insertBefore(-1, rows, { data: null, handler: (row) => { UI.render(row) } });
             
           }.bind(this),
       
@@ -268,7 +164,7 @@ const UI = Breaker.UI;
             let l = listData.length, i;
             //const data = this.state.renderedData;
             for (i = 0; i < l; i += 10) {
-              getPublicData(listData[i]).updateLabel();
+              UI.getPublicData(listData[i]).updateLabel();
               // data[i].label = data[i].label + " !!!";
               // update(listData[i], data[i]);
             }
@@ -299,9 +195,9 @@ const UI = Breaker.UI;
             var previous = this.state.selected;
             this.state.selected = row;
             if (previous) {
-              getPublicData(previous).select(false);
+              UI.getPublicData(previous).select(false);
             }
-            getPublicData(row).select(true);
+            UI.getPublicData(row).select(true);
           }.bind(this),
           remove: function (row) {
             let list = this.rowsList;
@@ -317,9 +213,9 @@ const UI = Breaker.UI;
       };
   
     return (
-      function(args,state,Component,Node){return [`<div ${Component.isIndependent?`bee-I="${Node.id='d'}" bee-path=${JSON.stringify(Component.pathname)} bee-N=${JSON.stringify(Component.name)}`:''} class="ontainer${Component.isIndependent?` bee-${Component.parentId}`:''}">`,function(args,state){return (UI.render(this.state.jumbotronInstance))},`<table class="able table-hover table-striped test-data"><tbody>`,function(args,state){return (
+      function(args,state,Component,Node){return [`<div ${Component.isIndependent?`bee-I="${Node.id='b'}" bee-path=${JSON.stringify(Component.pathname)} bee-N=${JSON.stringify(Component.name)}`:''} class="container${Component.isIndependent?` bee-${Component.parentId}`:''}">`,function(args,state){return (UI.render(this.state.jumbotronInstance))},`<table class="table table-hover table-striped test-data"><tbody>`,function(args,state){return (
                   this.rowsList.map(null,function(){})
-                )},`</tbody></table><span class="reloadicon glyphicon glyphicon-remove" aria-hidden="true"></span></div>`]}
+                )},`</tbody></table><span class="preloadicon glyphicon glyphicon-remove" aria-hidden="true"></span></div>`]}
     );
   };
   
@@ -333,6 +229,5 @@ const UI = Breaker.UI;
 IMEX.export_temporal = {}
 
 return IMEX.export_temporal;
-
 }
 }

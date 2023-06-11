@@ -84,8 +84,9 @@
                 node: independentNode,
                 iname: independentNode.getAttribute("bee-I")
             }
+            let clientRenderdNode = this.UI.render(Namings[path + compName](/**No Initial Args */)/**No Args */);
             independentNode.replaceWith(
-                this.UI.render(Namings[path + compName](/**No Initial Args */)/**No Args */).node
+                clientRenderdNode[internal].node
             )
             this.isSelectiveRendering = false;
             this.selector = null;
@@ -96,7 +97,7 @@
             comp[internal] = null;
             var compClass = CreatedComponents.get(_internal_.fnId);
             compClass.setup(htmlMethod, Setter, dynamicNodes, dependencies, dynMethod, comp);
-            if (comp.isIndependent) {
+            if (compClass.isIndependent) {
                 _internal_.independent = true;
             }
             if (B.isSelectiveRendering&&_internal_.independent) {
@@ -332,12 +333,14 @@
                     else {
                         node = clone(_internal_);
                     }
-                    if (node == independent) {
-                        return independent;
-                    }
+                    
                     out = _internal_.outerValue;
                     out[internal].node = node;
                     _internal_.status = STATUS.alive;
+                    if (node == independent) {
+                        _internal_.init_dyn = null;
+                        return independent;
+                    }
                     runDynamicnodes(_internal_.id, compClass.dn, _internal_.init_dyn);
                     _internal_.init_dyn = null;
                     return out;
@@ -470,6 +473,7 @@
             this.fn = fn;
             dinstinctComponents++;
             this.id = dinstinctComponents;
+            this.isIndependent = undefined;
         }
         ComponentClass.prototype.setup = function (htmlMethod, setter, dn,dependencies, dynMethod, proto) {
             this.dn = dn;
@@ -478,6 +482,7 @@
             this.html = htmlMethod;
             this.setAttr = setter;
             this.dynMethod = dynMethod;
+            this.isIndependent = !!proto.isIndependent;
             proto.keepStateIfDestroyed = keepStateIfDestroyed;
             proto.keepEverythingIfDestroyed = keepEverythingIfDestroyed;
             proto.isIndependent = isIndependent;

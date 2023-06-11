@@ -718,7 +718,12 @@ function buildServerString(node,tilt) {
      }
      let length;
      if (typeof node.attr.class == "string" && (length = node.attr.class.length) > 3) {
-       node.attr.class = node.attr.class.slice(1).split('"')[0].trim()
+       if (node.attr.class.startsWith('"')) {
+        node.attr.class = node.attr.class.slice(1).split('"')[0].trim()
+       } else {
+        node.attr.class = node.attr.class.trim()
+       }
+       
        var classString = Array.from(new Set(node.attr.class.split(" "))).join(" ");
        node.attr.class = `${classString}${node.head?`\${Component.isIndependent?\` bee-\${Component.parentId}\`:''}`:''}`;
      } else {

@@ -1,3 +1,7 @@
+//<@imports>
+import { Jumbotron } from "./jumbo";
+import { Row } from "./row";
+//</>
 const UI = Breaker.UI;
   
   const random = (max) => Math.round(Math.random() * 1000) % max;
@@ -74,163 +78,7 @@ const UI = Breaker.UI;
   
     return data;
   };
-  
-  const Row = UI.CreateComponent('row',function () {
-      this.onCreation = function () {
-          this.state = this.initArgs;
-          this.state.selected = false;
-      }
-      this.onServer = function (args,ready) {
-        this.state = this.initArgs;
-        this.state.selected = false;
-    }
-      this.public = function () {
-          return {
-              select: function (selected) {
-                  this.state.selected = selected;
-              }.bind(this),
-              updateLabel: function () {
-                  this.state.label += " !!!";
-              }.bind(this),
-          };
-      }
-    
-    return (
-      <view>
-        <tr key="row" $class={{value:state.selected?"danger":"",$dep:["selected"]}}>
-          <td class="col-md-1">
-            <>{state.id}</>
-          </td>
-          <td class="col-md-4">
-            <a onClick={function (e, This) {
-              UI.getPublicData(UI.getParentInstance(This)).select(getInstance(This));
-            }}>
-              <>{UI.CreateDynamicNode(function (state) { return state.label }, ["label"])}</>
-            </a>
-          </td>
-          <td class="col-md-1">
-            <a onClick={function (e, This) {
-              UI.getPublicData(UI.getParentInstance(This)).remove(getInstance(This));
-            }}>
-              <span class="glyphicon glyphicon-remove" aria-hidden="true" />
-            </a>
-          </td>
-          <td class="col-md-6"></td>
-        </tr>
-      </view>
-    );
-  });
-  
-  const Button = UI.CreateComponent("Button",function () {
-   
-    this.onCreation = function (args) {
-      this.action = args.action;
-      }
-      this.onServer = function (args,ready) {
-        this.action = args.action;
-      }
-    return (
-      <view>
-        <div class="col-sm-6 smallpad">
-          <button
-            key="button"
-            type="button"
-            class="btn btn-primary btn-block"
-            id={args.id}
-            onClick={function (e, This) {
-              UI.getPublicData(UI.getParentInstance(This)).action(This.action);
-            }}
-          >
-            <>{args.title}</>
-          </button>
-        </div>
-      </view>
-    );
-  });
-  
-  const Jumbotron = UI.CreateComponent('jumbo',function () {
-    this.onCreation = function () {
-        this.state = {
-          buttons: UI.CreateList([
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-          ]),
-        };
-      }
-      this.onServer = function (args,ready) {
-        this.state = {
-          buttons: UI.CreateList([
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-            Button.instance(),
-          ]),
-        };
-      }
-      this.public = function () {
-        return {
-          action: function (action) {
-            UI.getPublicData(UI.getParentInstance(this))[action.act](action.args);
-          }.bind(this),
-        };
-      };
-  
-   
-  
-    this.tempData = [
-      {
-        id: "run",
-        title: "Create 1,000 rows",
-        action: { act: "create", args: 1000 },
-      },
-      {
-        id: "runlots",
-        title: "Create 10,000 rows",
-        action: { act: "create", args: 10000 },
-      },
-      {
-        id: "add",
-        title: "Append 1,000 rows",
-        action: { act: "append", args: 1000 },
-      },
-      { id: "update", title: "Update every 10th row", action: { act: "update" } },
-      { id: "clear", title: "Clear", action: { act: "clear" } },
-      { id: "swaprows", title: "Swap Rows", action: { act: "swap" } },
-    ];
-    return (
-      <view>
-        <div class="jumbotron">
-          <div class="row">
-            <div class="col-md-6">
-              <h1>Breaker (keyed)</h1>
-            </div>
-            <div class="col-md-6">
-              <div class="row">
-                <>
-                  {
-                    this.state.buttons.map(
-                        this.tempData,
-                        function (e, i, data) {
-                          return UI.render(e, data[i]);
-                        },
-                        this
-                      )
-                  }
-                </>
-              </div>
-            </div>
-          </div>
-        </div>
-      </view>
-    );
-  });
-  
+ 
   const Main = function () {
     this.onCreation = function () {
         this.state = {
@@ -266,7 +114,7 @@ const UI = Breaker.UI;
             if (l) {
               list.remove(0)
             }
-            list.insertBefore(0, rows, { data: null, handler: (row) => { render(row) } });
+            list.insertBefore(0, rows, { data: null, handler: (row) => { UI.render(row) } });
             // list.insertBefore(0, rows)
             // setState(this, {
             //   renderList: true,
@@ -285,7 +133,7 @@ const UI = Breaker.UI;
             }
            
             //this.state.renderedData = this.state.renderedData.concat(data);
-            list.insertBefore(-1, rows, { data: null, handler: (row) => { render(row) } });
+            list.insertBefore(-1, rows, { data: null, handler: (row) => { UI.render(row) } });
             
           }.bind(this),
       
@@ -311,7 +159,7 @@ const UI = Breaker.UI;
             let l = listData.length, i;
             //const data = this.state.renderedData;
             for (i = 0; i < l; i += 10) {
-              getPublicData(listData[i]).updateLabel();
+              UI.getPublicData(listData[i]).updateLabel();
               // data[i].label = data[i].label + " !!!";
               // update(listData[i], data[i]);
             }
@@ -342,9 +190,9 @@ const UI = Breaker.UI;
             var previous = this.state.selected;
             this.state.selected = row;
             if (previous) {
-              getPublicData(previous).select(false);
+              UI.getPublicData(previous).select(false);
             }
-            getPublicData(row).select(true);
+            UI.getPublicData(row).select(true);
           }.bind(this),
           remove: function (row) {
             let list = this.rowsList;
