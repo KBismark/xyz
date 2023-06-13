@@ -1,0 +1,18 @@
+{
+  "name": "import-for-web",
+  "version": "0.1.0",
+  "main": "index.js",
+  "bin": {
+    "import-for-web": "bin/index.js",
+    "i4w": "bin/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "directories": {
+    "lib": "lib"
+  },
+  "description": ""
+}

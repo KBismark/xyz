@@ -3,9 +3,8 @@
   "version": "0.1.0",
   "main": "src/modules/home/front.js",
   "dependencies": {
-    "unpack-for-web": "^0.1.0"
+    "terser": "^5.18.0"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
